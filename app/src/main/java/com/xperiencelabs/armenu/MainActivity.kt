@@ -79,7 +79,7 @@ fun Menu(modifier: Modifier,onClick:(String)->Unit) {
             Icon(painter = painterResource(id = R.drawable.baseline_arrow_back_ios_24), contentDescription ="previous" )
         }
 
-
+        CircularImage(imageId = itemsList[currentIndex].imageId )
 
         IconButton(onClick = {
             updateIndex(1)
@@ -90,6 +90,19 @@ fun Menu(modifier: Modifier,onClick:(String)->Unit) {
 
 }
 
+@Composable
+fun CircularImage(
+    modifier: Modifier=Modifier,
+    imageId: Int
+) {
+    Box(modifier = modifier
+        .size(140.dp)
+        .clip(CircleShape)
+        .border(width = 3.dp, Translucent, CircleShape)
+    ){
+        Image(painter = painterResource(id = imageId), contentDescription = null, modifier = Modifier.size(140.dp), contentScale = ContentScale.FillBounds)
+    }
+}
 
 @Composable
 fun ARScreen(model:String) {
