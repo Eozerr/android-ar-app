@@ -22,9 +22,11 @@ import com.google.ar.core.Config
 import com.xperiencelabs.armenu.ui.theme.ARMenuTheme
 import com.xperiencelabs.armenu.ui.theme.Translucent
 import io.github.sceneview.ar.ARScene
+import io.github.sceneview.ar.localRotation
 import io.github.sceneview.ar.node.ArModelNode
 import io.github.sceneview.ar.node.ArNode
 import io.github.sceneview.ar.node.PlacementMode
+import io.github.sceneview.math.Rotation
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -103,9 +105,8 @@ fun CircularImage(
         Image(painter = painterResource(id = imageId), contentDescription = null, modifier = Modifier.size(140.dp), contentScale = ContentScale.FillBounds)
     }
 }
-
 @Composable
-fun ARScreen(model:String) {
+fun ARScreen(model: String) {
     val nodes = remember {
         mutableListOf<ArNode>()
     }
@@ -115,25 +116,29 @@ fun ARScreen(model:String) {
     val placeModelButton = remember {
         mutableStateOf(false)
     }
-    Box(modifier = Modifier.fillMaxSize()){
+    val rotationState = remember {
+        mutableStateOf(0f)
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
         ARScene(
             modifier = Modifier.fillMaxSize(),
             nodes = nodes,
             planeRenderer = true,
-            onCreate = {arSceneView ->
+            onCreate = { arSceneView ->
                 arSceneView.lightEstimationMode = Config.LightEstimationMode.DISABLED
                 arSceneView.planeRenderer.isShadowReceiver = false
-                modelNode.value = ArModelNode(arSceneView.engine,PlacementMode.INSTANT).apply {
+                modelNode.value = ArModelNode(arSceneView.engine, PlacementMode.INSTANT).apply {
                     loadModelGlbAsync(
                         glbFileLocation = "models/${model}.glb",
                         scaleToUnits = 0.8f
-                    ){
+                    ) {
 
                     }
                     onAnchorChanged = {
                         placeModelButton.value = !isAnchored
                     }
-                    onHitResult = {node, hitResult ->
+                    onHitResult = { node, hitResult ->
                         placeModelButton.value = node.isTracking
                     }
 
@@ -144,7 +149,24 @@ fun ARScreen(model:String) {
                 planeRenderer.isVisible = false
             }
         )
-        if(placeModelButton.value){
+
+        // Döndürme Slider'ı
+        Slider(
+            value = rotationState.value,
+            onValueChange = { newRotation ->
+                rotationState.value = newRotation
+                modelNode.value?.apply {
+                    val rotation = Rotation(0f, newRotation * 360f, 0f) // Döndürmeyi derece cinsinden ifade etmek için * 360 eklenmiştir.
+                    localRotation = rotation
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        )
+
+        // Diğer kontrol elemanları
+        if (placeModelButton.value) {
             Button(onClick = {
                 modelNode.value?.anchor()
             }, modifier = Modifier.align(Alignment.Center)) {
@@ -153,16 +175,16 @@ fun ARScreen(model:String) {
         }
     }
 
-
-    LaunchedEffect(key1 = model){
+    LaunchedEffect(key1 = model) {
         modelNode.value?.loadModelGlbAsync(
             glbFileLocation = "models/${model}.glb",
             scaleToUnits = 0.8f
         )
-        Log.e("errorloading","ERROR LOADING MODEL")
+        Log.e("errorloading", "ERROR LOADING MODEL")
     }
-
 }
+
+
 data class Furniture(var name:String,var imageId:Int)
 
 
