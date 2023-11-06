@@ -69,7 +69,9 @@ fun Menu(modifier: Modifier,onClick:(String)->Unit) {
     val itemsList = listOf(
         Furniture("sofa", R.drawable.leather_sofa),
         Furniture("chair",R.drawable.chair),
-
+        Furniture("wall_plant",R.drawable.wall_plant),
+        Furniture("pouf",R.drawable.pouf),
+        Furniture("painting",R.drawable.painting),
     )
     fun updateIndex(offset:Int){
         currentIndex = (currentIndex+offset + itemsList.size) % itemsList.size
@@ -185,7 +187,6 @@ fun ARScreen(model: String) {
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
-                .rotate(90f)
         )
 
 
@@ -199,7 +200,7 @@ fun ARScreen(model: String) {
             Button(onClick = {
                 modelNode.value?.anchor()
             }, modifier = Modifier.align(Alignment.Center)) {
-                Text(text = "Place It")
+                Text(text = "Sabitle")
             }
         }
     }
