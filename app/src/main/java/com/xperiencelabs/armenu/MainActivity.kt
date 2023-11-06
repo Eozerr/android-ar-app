@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -15,22 +16,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.google.ar.core.Config
-import com.google.ar.sceneform.math.Vector3
 import com.xperiencelabs.armenu.ui.theme.ARMenuTheme
 import com.xperiencelabs.armenu.ui.theme.Translucent
 import io.github.sceneview.ar.ARScene
 import io.github.sceneview.ar.localRotation
-import io.github.sceneview.ar.localScale
 import io.github.sceneview.ar.node.ArModelNode
 import io.github.sceneview.ar.node.ArNode
 import io.github.sceneview.ar.node.PlacementMode
 import io.github.sceneview.math.Rotation
-import io.github.sceneview.math.Scale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -123,11 +122,24 @@ fun ARScreen(model: String) {
     val rotationState = remember {
         mutableStateOf(0f)
     }
-    val scaleState = remember {
-        mutableStateOf(1f)
-    }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    var scale by remember { mutableStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset(0f, 0f)) }
+
+    Box(modifier = Modifier.fillMaxSize()
+        .pointerInput(Unit){
+            detectTransformGestures { _, pan, zoom, _ ->
+                scale *= zoom
+                offset = if (scale > 1f) {
+                    Offset(
+                        offset.x + pan.x * zoom,
+                        offset.y + pan.y * zoom
+                    )
+                } else {
+                    Offset(0f, 0f)
+                }
+            }
+    }) {
         ARScene(
             modifier = Modifier.fillMaxSize(),
             nodes = nodes,
@@ -163,7 +175,7 @@ fun ARScreen(model: String) {
             onValueChange = { newRotation ->
                 rotationState.value = newRotation
                 modelNode.value?.apply {
-                    val rotation = Rotation(0f, newRotation * 360f, 0f)
+                    val rotation = Rotation(0f, newRotation * 360f, 0f) // Döndürmeyi derece cinsinden ifade etmek için * 360 eklenmiştir.
                     localRotation = rotation
                 }
             },
@@ -172,33 +184,11 @@ fun ARScreen(model: String) {
                 .padding(16.dp)
         )
 
-        // Dikey Boyutlandırma Slider'ı
-        Slider(
-            value = scaleState.value,
-            onValueChange = { newScale ->
-                scaleState.value = newScale
-                modelNode.value?.apply {
-                    localScale = Scale(newScale, newScale, newScale)
-                }
-            },
-            valueRange = 0.1f..2.0f, // Minimum ve maksimum değerleri belirtin
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-                .rotate(90f)
-        )
-
-
-
-
-
-
-
         // Diğer kontrol elemanları
         if (placeModelButton.value) {
             Button(onClick = {
                 modelNode.value?.anchor()
-            }, modifier = Modifier.align(Alignment.Center)) {
+            }, modifier = Modifier .offset(y = 200.dp).align(Alignment.Center)) {
                 Text(text = "Place It")
             }
         }
@@ -212,7 +202,6 @@ fun ARScreen(model: String) {
         Log.e("errorloading", "ERROR LOADING MODEL")
     }
 }
-
 
 
 data class Furniture(var name:String,var imageId:Int)
