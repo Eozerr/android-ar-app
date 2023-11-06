@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -16,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -44,7 +47,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                   Box(modifier = Modifier.fillMaxSize()){
                       val currentModel = remember {
-                          mutableStateOf("sofa")
+                          mutableStateOf("leather_sofa")
                       }
                       ARScreen(currentModel.value)
                       Menu(modifier = Modifier.align(Alignment.BottomCenter)){
@@ -67,8 +70,10 @@ fun Menu(modifier: Modifier,onClick:(String)->Unit) {
     }
 
     val itemsList = listOf(
-        Furniture("sofa", R.drawable.leather_sofa),
+        Furniture("leather_sofa", R.drawable.leather_sofa),
         Furniture("chair",R.drawable.chair),
+        Furniture("pouf",R.drawable.pouf),
+        Furniture("wall_plant",R.drawable.wall_plant)
 
     )
     fun updateIndex(offset:Int){
@@ -127,7 +132,24 @@ fun ARScreen(model: String) {
         mutableStateOf(1f)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    var scale by remember { mutableStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset(0f, 0f))}
+
+    Box(modifier = Modifier.fillMaxSize()
+        .pointerInput(Unit){
+            detectTransformGestures { _, pan, zoom, _ ->
+                scale *= zoom
+                offset = if (scale > 1f) {
+                    Offset(
+                        offset.x + pan.x * zoom,
+                        offset.y + pan.y * zoom
+                    )
+                } else {
+                    Offset(0f, 0f)
+                }
+            }
+        }
+    ) {
         ARScene(
             modifier = Modifier.fillMaxSize(),
             nodes = nodes,
@@ -172,25 +194,6 @@ fun ARScreen(model: String) {
                 .padding(16.dp)
         )
 
-        // Dikey Boyutlandırma Slider'ı
-        Slider(
-            value = scaleState.value,
-            onValueChange = { newScale ->
-                scaleState.value = newScale
-                modelNode.value?.apply {
-                    localScale = Scale(newScale, newScale, newScale)
-                }
-            },
-            valueRange = 0.1f..2.0f, // Minimum ve maksimum değerleri belirtin
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-                .rotate(90f)
-        )
-
-
-
-
 
 
 
@@ -198,7 +201,7 @@ fun ARScreen(model: String) {
         if (placeModelButton.value) {
             Button(onClick = {
                 modelNode.value?.anchor()
-            }, modifier = Modifier.align(Alignment.Center)) {
+            }, modifier = Modifier.offset(y = 200.dp).align(Alignment.Center)) {
                 Text(text = "Place It")
             }
         }
