@@ -49,11 +49,28 @@ class MainActivity : ComponentActivity() {
                       val currentModel = remember {
                           mutableStateOf("leather_sofa")
                       }
-                      ARScreen(currentModel.value)
-                      Menu(modifier = Modifier.align(Alignment.BottomCenter)){
-                          currentModel.value = it
+                      val modelNode = remember{
+                          mutableStateOf<ArModelNode?>(null)
                       }
-
+                      val placeModelButton =remember{
+                          mutableStateOf(false)
+                      }
+                      ARScreen(
+                          model =currentModel.value,
+                          modelNode = modelNode,
+                          placeModelButton = placeModelButton
+                      )
+                      Menu(modifier = Modifier.align(Alignment.BottomCenter),
+                          onClick = {
+                              //Ar model tanımı burada yapılır.
+                              currentModel.value=it
+                          },
+                          onUnanchor = {
+                              //sabitlemeyi kaldırır ve placemodel butona geçilebilir hale getirir.
+                              modelNode.value?.unanchor()
+                              placeModelButton.value=true
+                          }
+                        )
                   }
                 }
             }
@@ -61,10 +78,13 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-
+fun ArModelNode.unanchor(){
+    anchor?.detach()
+    anchor=null
+}
 
 @Composable
-fun Menu(modifier: Modifier,onClick:(String)->Unit) {
+fun Menu(modifier: Modifier,onClick:(String)->Unit, onUnanchor:()-> Unit) {
     var currentIndex by remember {
         mutableStateOf(0)
     }
@@ -79,6 +99,8 @@ fun Menu(modifier: Modifier,onClick:(String)->Unit) {
     fun updateIndex(offset:Int){
         currentIndex = (currentIndex+offset + itemsList.size) % itemsList.size
         onClick(itemsList[currentIndex].name)
+        // Sağa veya sola tıklandığında sabitlemeyi otomatik kaldırır.
+        onUnanchor()
     }
     Row(modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -115,16 +137,12 @@ fun CircularImage(
     }
 }
 @Composable
-fun ARScreen(model: String) {
+fun ARScreen(model: String, modelNode: MutableState<ArModelNode?>, placeModelButton: MutableState<Boolean>) {
     val nodes = remember {
         mutableListOf<ArNode>()
     }
-    val modelNode = remember {
-        mutableStateOf<ArModelNode?>(null)
-    }
-    val placeModelButton = remember {
-        mutableStateOf(false)
-    }
+
+
     val rotationState = remember {
         mutableStateOf(0f)
     }
@@ -201,6 +219,8 @@ fun ARScreen(model: String) {
         if (placeModelButton.value) {
             Button(onClick = {
                 modelNode.value?.anchor()
+                placeModelButton.value=false
+
             }, modifier = Modifier.offset(y = 200.dp).align(Alignment.Center)) {
                 Text(text = "Place It")
             }
