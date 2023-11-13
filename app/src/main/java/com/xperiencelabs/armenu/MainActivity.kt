@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
@@ -16,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -42,40 +45,64 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                  Box(modifier = Modifier.fillMaxSize()){
-                      val currentModel = remember {
-                          mutableStateOf("sofa")
-                      }
-                      ARScreen(currentModel.value)
-                      Menu(modifier = Modifier.align(Alignment.BottomCenter)){
-                          currentModel.value = it
-                      }
-
-                  }
+                    Box(modifier = Modifier.fillMaxSize()){
+                        val currentModel = remember {
+                            mutableStateOf("leather_sofa")
+                        }
+                        val modelNode = remember{
+                            mutableStateOf<ArModelNode?>(null)
+                        }
+                        val placeModelButton =remember{
+                            mutableStateOf(false)
+                        }
+                        ARScreen(
+                            model =currentModel.value,
+                            modelNode = modelNode,
+                            placeModelButton = placeModelButton
+                        )
+                        Menu(modifier = Modifier.align(Alignment.BottomCenter),
+                            onClick = {
+                                //Ar model tanımı burada yapılır.
+                                currentModel.value=it
+                            },
+                            onUnanchor = {
+                                //sabitlemeyi kaldırır ve placemodel butona geçilebilir hale getirir.
+                                modelNode.value?.unanchor()
+                                placeModelButton.value=true
+                            }
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-
+fun ArModelNode.unanchor(){
+    anchor?.detach()
+    anchor=null
+}
 
 @Composable
-fun Menu(modifier: Modifier,onClick:(String)->Unit) {
+fun Menu(modifier: Modifier,onClick:(String)->Unit, onUnanchor:()-> Unit) {
     var currentIndex by remember {
         mutableStateOf(0)
     }
 
     val itemsList = listOf(
         Furniture("sofa", R.drawable.leather_sofa),
-        Furniture("chair",R.drawable.chair),
-        Furniture("wall_plant",R.drawable.wall_plant),
-        Furniture("pouf",R.drawable.pouf),
-        Furniture("painting",R.drawable.painting),
+        Furniture("chair", R.drawable.chair),
+        Furniture("wall_plant", R.drawable.wall_plant),
+        Furniture("pouf", R.drawable.pouf),
+        Furniture("tekli", R.drawable.tekli),
+        Furniture("whites", R.drawable.whites),
+        Furniture("Sandalye", R.drawable.sandalye),
     )
     fun updateIndex(offset:Int){
         currentIndex = (currentIndex+offset + itemsList.size) % itemsList.size
         onClick(itemsList[currentIndex].name)
+        // Sağa veya sola tıklandığında sabitlemeyi otomatik kaldırır.
+        onUnanchor()
     }
     Row(modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -112,16 +139,12 @@ fun CircularImage(
     }
 }
 @Composable
-fun ARScreen(model: String) {
+fun ARScreen(model: String, modelNode: MutableState<ArModelNode?>, placeModelButton: MutableState<Boolean>) {
     val nodes = remember {
         mutableListOf<ArNode>()
     }
-    val modelNode = remember {
-        mutableStateOf<ArModelNode?>(null)
-    }
-    val placeModelButton = remember {
-        mutableStateOf(false)
-    }
+
+
     val rotationState = remember {
         mutableStateOf(0f)
     }
@@ -129,7 +152,24 @@ fun ARScreen(model: String) {
         mutableStateOf(1f)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    var scale by remember { mutableStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset(0f, 0f))}
+
+    Box(modifier = Modifier.fillMaxSize()
+        .pointerInput(Unit){
+            detectTransformGestures { _, pan, zoom, _ ->
+                scale *= zoom
+                offset = if (scale > 1f) {
+                    Offset(
+                        offset.x + pan.x * zoom,
+                        offset.y + pan.y * zoom
+                    )
+                } else {
+                    Offset(0f, 0f)
+                }
+            }
+        }
+    ) {
         ARScene(
             modifier = Modifier.fillMaxSize(),
             nodes = nodes,
@@ -174,24 +214,6 @@ fun ARScreen(model: String) {
                 .padding(16.dp)
         )
 
-        // Dikey Boyutlandırma Slider'ı
-        Slider(
-            value = scaleState.value,
-            onValueChange = { newScale ->
-                scaleState.value = newScale
-                modelNode.value?.apply {
-                    localScale = Scale(newScale, newScale, newScale)
-                }
-            },
-            valueRange = 0.1f..2.0f, // Minimum ve maksimum değerleri belirtin
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-        )
-
-
-
-
 
 
 
@@ -199,8 +221,10 @@ fun ARScreen(model: String) {
         if (placeModelButton.value) {
             Button(onClick = {
                 modelNode.value?.anchor()
-            }, modifier = Modifier.align(Alignment.Center)) {
-                Text(text = "Sabitle")
+                placeModelButton.value=false
+
+            }, modifier = Modifier.offset(y = 200.dp).align(Alignment.Center)) {
+                Text(text = "Place It")
             }
         }
     }
@@ -217,9 +241,3 @@ fun ARScreen(model: String) {
 
 
 data class Furniture(var name:String,var imageId:Int)
-
-
-
-
-
-
