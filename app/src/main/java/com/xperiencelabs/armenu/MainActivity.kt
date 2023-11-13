@@ -18,10 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.google.ar.core.Config
 import com.google.ar.sceneform.math.Vector3
 import com.xperiencelabs.armenu.ui.theme.ARMenuTheme
@@ -47,7 +49,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                   Box(modifier = Modifier.fillMaxSize()){
                       val currentModel = remember {
-                          mutableStateOf("leather_sofa")
+                          mutableStateOf("chair")
                       }
                       val modelNode = remember{
                           mutableStateOf<ArModelNode?>(null)
@@ -93,22 +95,35 @@ fun Menu(modifier: Modifier,onClick:(String)->Unit, onUnanchor:()-> Unit) {
         Furniture("leather_sofa", R.drawable.leather_sofa),
         Furniture("chair",R.drawable.chair),
         Furniture("pouf",R.drawable.pouf),
-        Furniture("wall_plant",R.drawable.wall_plant)
+        Furniture("wall_plant",R.drawable.wall_plant),
+        Furniture("koltuk_2",R.drawable.koltuk_2),
+        Furniture("koltuk_3",R.drawable.koltuk_3),
+        Furniture("koltuk_4",R.drawable.koltuk_4),
+        Furniture("koltuk_5",R.drawable.koltuk_5),
+        Furniture("koltuk_6",R.drawable.koltuk_6),
+        Furniture("masa_1",R.drawable.masa_1),
+        Furniture("masa_2",R.drawable.masa_2),
+        Furniture("masa_3",R.drawable.masa_3),
+        Furniture("sandalye_1",R.drawable.sandalye_1),
+        Furniture("yatak_1",R.drawable.yatak_1),
 
-    )
+
+
+        )
     fun updateIndex(offset:Int){
         currentIndex = (currentIndex+offset + itemsList.size) % itemsList.size
         onClick(itemsList[currentIndex].name)
         // Sağa veya sola tıklandığında sabitlemeyi otomatik kaldırır.
         onUnanchor()
     }
-    Row(modifier = modifier.fillMaxWidth(),
+    Row(
+        modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceAround
     ) {
         IconButton(onClick = {
             updateIndex(-1)
-        }) {
+        }, modifier = Modifier.graphicsLayer { translationY = -45.dp.toPx() }) { // Okları yukarı kaydırmak için bu satırı ekledik
             Icon(painter = painterResource(id = R.drawable.baseline_arrow_back_ios_24), contentDescription ="previous" )
         }
 
@@ -116,7 +131,7 @@ fun Menu(modifier: Modifier,onClick:(String)->Unit, onUnanchor:()-> Unit) {
 
         IconButton(onClick = {
             updateIndex(1)
-        }) {
+        }, modifier = Modifier.graphicsLayer { translationY = -45.dp.toPx() }) { // Okları yukarı kaydırmak için bu satırı ekledik
             Icon(painter = painterResource(id = R.drawable.baseline_arrow_forward_ios_24), contentDescription ="next")
         }
     }
@@ -129,6 +144,7 @@ fun CircularImage(
     imageId: Int
 ) {
     Box(modifier = modifier
+        .offset(y = -45.dp)
         .size(140.dp)
         .clip(CircleShape)
         .border(width = 3.dp, Translucent, CircleShape)
@@ -210,6 +226,7 @@ fun ARScreen(model: String, modelNode: MutableState<ArModelNode?>, placeModelBut
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
+                .zIndex(3F)
         )
 
 
@@ -221,7 +238,7 @@ fun ARScreen(model: String, modelNode: MutableState<ArModelNode?>, placeModelBut
                 modelNode.value?.anchor()
                 placeModelButton.value=false
 
-            }, modifier = Modifier.offset(y = 200.dp).align(Alignment.Center)) {
+            }, modifier = Modifier.offset(y = 175.dp).align(Alignment.Center)) {
                 Text(text = "Place It")
             }
         }
