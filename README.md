@@ -30,7 +30,7 @@ Follow these steps to get the project up and running on your local machine.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/ar-furniture-app.git
+   git clone https://github.com/Eozerr/android-ar-app.git
 2. Open the project in Android Studio.
 3. Connect your Android device or start an emulator.
 4. Build and run the application.
@@ -51,3 +51,4 @@ We welcome contributions from the community. If you find a bug or have an enhanc
 This project is licensed under the MIT License.
 
 ## 📸 Screenshots
+![b57a91f5-c87a-4da6-b6a0-5284f52917bf](https://github.com/Eozerr/android-ar-app/assets/96316375/b5cf2a99-f7eb-4ace-a29e-042d7b93ab63)
